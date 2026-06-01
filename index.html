@@ -1,0 +1,1961 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="烧烤收银">
+    <meta name="format-detection" content="telephone=no">
+    <meta name="theme-color" content="#FFFFFF">
+    <title>烧烤收银</title>
+
+    <style>
+        /* ========== CSS变量 - iOS 18色彩系统 ========== */
+        :root {
+            --blue: #007AFF;
+            --green: #34C759;
+            --orange: #FF9500;
+            --red: #FF3B30;
+            --bg: #FFFFFF;
+            --card: #F2F2F7;
+            --text: #1C1C1E;
+            --text-secondary: #8E8E93;
+            --separator: #E5E5EA;
+            --tab-bg: rgba(249, 249, 249, 0.94);
+            --safe-top: env(safe-area-inset-top, 20px);
+            --safe-bottom: env(safe-area-inset-bottom, 20px);
+            --safe-left: env(safe-area-inset-left, 0px);
+            --safe-right: env(safe-area-inset-right, 0px);
+            --radius: 16px;
+            --radius-sm: 10px;
+            --max-width: 430px;
+        }
+
+        /* ========== 全局基础样式 ========== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html, body {
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Helvetica Neue', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            font-size: 17px;
+            line-height: 1.47059;
+            -webkit-font-smoothing: antialiased;
+            -webkit-text-size-adjust: 100%;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+            user-select: none;
+            -webkit-user-select: none;
+            overscroll-behavior: none;
+            overflow-x: hidden;
+            height: 100%;
+            width: 100%;
+        }
+
+        body {
+            display: flex;
+            justify-content: center;
+            background: var(--bg);
+        }
+
+        /* ========== 应用外壳 ========== */
+        #app {
+            width: 100%;
+            max-width: var(--max-width);
+            height: 100vh;
+            height: 100dvh;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        /* ========== 顶部安全区域 ========== */
+        .safe-top {
+            height: var(--safe-top);
+            min-height: 20px;
+            background: var(--bg);
+            flex-shrink: 0;
+        }
+
+        /* ========== 主内容区域 ========== */
+        #main-content {
+            flex: 1;
+            overflow-y: auto;
+            overflow-x: hidden;
+            -webkit-overflow-scrolling: touch;
+            scroll-behavior: smooth;
+            padding: 0 16px;
+            padding-bottom: 8px;
+        }
+
+        /* ========== 页面切换动画 ========== */
+        .page {
+            display: none;
+            animation: fadeIn 0.25s ease-out;
+        }
+        .page.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(6px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ========== 页面头部 ========== */
+        .page-header {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 12px 0 8px;
+            position: relative;
+        }
+
+        .page-title {
+            font-size: 34px;
+            font-weight: 700;
+            letter-spacing: -0.1px;
+            color: var(--text);
+        }
+
+        .page-date {
+            position: absolute;
+            right: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 15px;
+            color: var(--text-secondary);
+            font-weight: 400;
+        }
+
+        /* ========== iOS分段控制器 ========== */
+        .segmented-control {
+            display: flex;
+            background: var(--card);
+            border-radius: 10px;
+            padding: 3px;
+            margin: 8px 0 16px;
+            position: relative;
+        }
+
+        .segmented-control button {
+            flex: 1;
+            padding: 8px 0;
+            font-size: 15px;
+            font-weight: 500;
+            border: none;
+            background: transparent;
+            color: var(--text);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+            z-index: 1;
+            min-height: 40px;
+            font-family: inherit;
+        }
+
+        .segmented-control button.active {
+            background: #FFFFFF;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.06);
+            font-weight: 600;
+        }
+
+        /* ========== 网格卡片 ========== */
+        .card-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .table-card {
+            background: #FFFFFF;
+            border-radius: var(--radius);
+            padding: 20px 16px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.02);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+            min-height: 110px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .table-card:active {
+            transform: scale(0.97);
+            box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+        }
+
+        .table-card.checked-out {
+            background: var(--green);
+            color: #FFFFFF;
+            box-shadow: 0 2px 8px rgba(52,199,89,0.2);
+        }
+
+        .table-card.checked-out .card-amount,
+        .table-card.checked-out .card-status {
+            color: rgba(255,255,255,0.9);
+        }
+
+        .table-card.checked-out .card-number {
+            color: #FFFFFF;
+        }
+
+        /* 打包订单已结账(绿色)和未结账(橙色) */
+        .table-card.checked-out-takeaway {
+            background: var(--green);
+            color: #FFFFFF;
+            box-shadow: 0 2px 8px rgba(52,199,89,0.2);
+        }
+        .table-card.unchecked-takeaway {
+            background: var(--orange);
+            color: #FFFFFF;
+            box-shadow: 0 2px 8px rgba(255,149,0,0.2);
+        }
+        .table-card.unchecked-takeaway .card-amount,
+        .table-card.unchecked-takeaway .card-status,
+        .table-card.checked-out-takeaway .card-amount,
+        .table-card.checked-out-takeaway .card-status {
+            color: rgba(255,255,255,0.9);
+        }
+        .table-card.unchecked-takeaway .card-number,
+        .table-card.checked-out-takeaway .card-number {
+            color: #FFFFFF;
+        }
+
+        .card-number {
+            font-size: 36px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+            line-height: 1;
+        }
+
+        .card-amount {
+            font-size: 24px;
+            font-weight: 600;
+            margin-top: 8px;
+            color: var(--text);
+        }
+
+        .card-amount::before {
+            content: '¥';
+            font-size: 16px;
+            font-weight: 500;
+            margin-right: 2px;
+        }
+
+        .card-status {
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            margin-top: 4px;
+        }
+
+        /* ========== 底部标签栏 ========== */
+        #tab-bar {
+            display: flex;
+            background: var(--tab-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-top: 0.5px solid var(--separator);
+            padding-bottom: var(--safe-bottom);
+            flex-shrink: 0;
+        }
+
+        .tab-item {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 6px 0 4px;
+            cursor: pointer;
+            color: var(--text-secondary);
+            transition: color 0.15s ease;
+            min-height: 50px;
+            gap: 2px;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .tab-item.active {
+            color: var(--blue);
+        }
+
+        .tab-item svg {
+            width: 26px;
+            height: 26px;
+        }
+
+        .tab-label {
+            font-size: 10px;
+            font-weight: 500;
+            letter-spacing: 0.1px;
+        }
+
+        /* ========== 底部弹出Sheet ========== */
+        .sheet-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.35);
+            z-index: 100;
+            display: none;
+            animation: overlayFadeIn 0.3s ease;
+        }
+        .sheet-overlay.show {
+            display: block;
+        }
+
+        @keyframes overlayFadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .sheet {
+            position: fixed;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%) translateY(100%);
+            width: 100%;
+            max-width: var(--max-width);
+            background: #FFFFFF;
+            border-radius: 24px 24px 0 0;
+            z-index: 101;
+            padding: 0 20px;
+            padding-bottom: calc(20px + var(--safe-bottom));
+            max-height: 85vh;
+            max-height: 85dvh;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            transition: transform 0.35s cubic-bezier(0.32, 0.72, 0, 1);
+            box-shadow: 0 -4px 20px rgba(0,0,0,0.12);
+        }
+        .sheet.show {
+            transform: translateX(-50%) translateY(0);
+        }
+
+        .sheet-handle {
+            width: 36px;
+            height: 5px;
+            background: #D1D1D6;
+            border-radius: 3px;
+            margin: 10px auto 16px;
+        }
+
+        .sheet-title {
+            font-size: 20px;
+            font-weight: 600;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        /* ========== Sheet内输入框样式 ========== */
+        .input-group {
+            margin-bottom: 16px;
+        }
+
+        .input-label {
+            font-size: 13px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 6px;
+            font-weight: 500;
+        }
+
+        .input-field {
+            width: 100%;
+            padding: 14px 16px;
+            font-size: 17px;
+            font-family: inherit;
+            border: none;
+            border-radius: var(--radius-sm);
+            background: var(--card);
+            color: var(--text);
+            -webkit-appearance: none;
+            outline: none;
+            transition: background 0.15s ease;
+        }
+
+        .input-field:focus {
+            background: #E8E8ED;
+        }
+
+        .input-field.amount-input {
+            font-size: 32px;
+            font-weight: 600;
+            text-align: center;
+            letter-spacing: -0.5px;
+        }
+
+        /* ========== iOS风格开关 ========== */
+        .toggle-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: var(--card);
+            border-radius: var(--radius-sm);
+            padding: 14px 16px;
+            margin-bottom: 16px;
+        }
+
+        .toggle-label {
+            font-size: 17px;
+            font-weight: 400;
+        }
+
+        .ios-toggle {
+            position: relative;
+            width: 51px;
+            height: 31px;
+            flex-shrink: 0;
+        }
+
+        .ios-toggle input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .ios-toggle .toggle-bg {
+            position: absolute;
+            inset: 0;
+            background: #E9E9EA;
+            border-radius: 31px;
+            transition: background 0.25s ease;
+            cursor: pointer;
+        }
+
+        .ios-toggle input:checked + .toggle-bg {
+            background: var(--green);
+        }
+
+        .ios-toggle .toggle-bg::after {
+            content: '';
+            position: absolute;
+            width: 27px;
+            height: 27px;
+            left: 2px;
+            bottom: 2px;
+            background: #FFFFFF;
+            border-radius: 50%;
+            transition: transform 0.25s cubic-bezier(0.32, 0.72, 0, 1);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.15);
+        }
+
+        .ios-toggle input:checked + .toggle-bg::after {
+            transform: translateX(20px);
+        }
+
+        /* ========== Sheet内按钮 ========== */
+        .sheet-actions {
+            display: flex;
+            gap: 12px;
+            margin-top: 8px;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 14px;
+            font-size: 17px;
+            font-weight: 600;
+            border: none;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            font-family: inherit;
+            transition: all 0.15s ease;
+            min-height: 50px;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .btn:active {
+            transform: scale(0.97);
+        }
+
+        .btn-primary {
+            background: var(--blue);
+            color: #FFFFFF;
+        }
+
+        .btn-danger {
+            background: rgba(255,59,48,0.1);
+            color: var(--red);
+        }
+
+        .btn-secondary {
+            background: var(--card);
+            color: var(--text);
+        }
+
+        /* ========== 悬浮添加按钮 ========== */
+        .fab {
+            position: fixed;
+            right: max(20px, calc((100vw - min(100vw, 430px)) / 2 + 20px));
+            bottom: calc(90px + var(--safe-bottom));
+            width: 56px;
+            height: 56px;
+            border-radius: 28px;
+            background: var(--blue);
+            color: #FFFFFF;
+            border: none;
+            font-size: 28px;
+            cursor: pointer;
+            box-shadow: 0 6px 20px rgba(0,122,255,0.35);
+            z-index: 50;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .fab:active {
+            transform: scale(0.9);
+            box-shadow: 0 4px 12px rgba(0,122,255,0.3);
+        }
+
+        /* ========== 确认弹窗 (iOS风格Alert) ========== */
+        .alert-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.35);
+            z-index: 200;
+            display: none;
+            align-items: center;
+            justify-content: center;
+        }
+        .alert-overlay.show {
+            display: flex;
+        }
+
+        .alert {
+            background: #FFFFFF;
+            border-radius: 20px;
+            width: 280px;
+            max-width: 90vw;
+            overflow: hidden;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+            animation: alertPopIn 0.25s cubic-bezier(0.32, 0.72, 0, 1);
+        }
+
+        @keyframes alertPopIn {
+            from { transform: scale(1.1); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+
+        .alert-title {
+            font-size: 17px;
+            font-weight: 600;
+            text-align: center;
+            padding: 20px 16px 8px;
+        }
+
+        .alert-message {
+            font-size: 13px;
+            color: var(--text-secondary);
+            text-align: center;
+            padding: 0 16px 20px;
+            line-height: 1.4;
+        }
+
+        .alert-actions {
+            display: flex;
+            border-top: 0.5px solid var(--separator);
+        }
+
+        .alert-btn {
+            flex: 1;
+            padding: 12px;
+            font-size: 17px;
+            font-weight: 400;
+            border: none;
+            background: none;
+            cursor: pointer;
+            font-family: inherit;
+            -webkit-tap-highlight-color: transparent;
+            transition: background 0.1s ease;
+        }
+
+        .alert-btn:active {
+            background: var(--card);
+        }
+
+        .alert-btn:first-child {
+            border-right: 0.5px solid var(--separator);
+        }
+
+        .alert-btn.destructive {
+            color: var(--red);
+            font-weight: 600;
+        }
+
+        .alert-btn.confirm {
+            color: var(--blue);
+            font-weight: 600;
+        }
+
+        /* ========== 记事本列表 ========== */
+        .note-list {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .note-item {
+            background: #FFFFFF;
+            border-radius: var(--radius-sm);
+            padding: 16px;
+            margin-bottom: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+            cursor: pointer;
+            position: relative;
+            transition: transform 0.2s ease;
+            -webkit-tap-highlight-color: transparent;
+            overflow: hidden;
+        }
+
+        .note-item:active {
+            transform: scale(0.98);
+        }
+
+        .note-item.swiping {
+            transform: translateX(-80px);
+        }
+
+        .note-title {
+            font-size: 17px;
+            font-weight: 500;
+        }
+
+        .note-preview {
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin-top: 4px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .note-time {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-top: 8px;
+        }
+
+        .note-delete-btn {
+            position: absolute;
+            right: -80px;
+            top: 0;
+            bottom: 0;
+            width: 80px;
+            background: var(--red);
+            color: #FFFFFF;
+            border: none;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: right 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: inherit;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .note-item.swiping .note-delete-btn {
+            right: 0;
+        }
+
+        /* 删除按钮图标 */
+        .note-delete-btn::before {
+            content: '删除';
+        }
+
+        /* ========== 清除已完成按钮(打包视图) ========== */
+        .clear-btn-row {
+            display: flex;
+            justify-content: flex-end;
+            margin-bottom: 12px;
+        }
+
+        .clear-btn {
+            padding: 8px 16px;
+            font-size: 15px;
+            font-weight: 500;
+            border: none;
+            border-radius: 20px;
+            background: rgba(255,59,48,0.08);
+            color: var(--red);
+            cursor: pointer;
+            font-family: inherit;
+            transition: all 0.15s ease;
+            min-height: 36px;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .clear-btn:active {
+            background: rgba(255,59,48,0.18);
+            transform: scale(0.96);
+        }
+
+        /* ========== 空状态 ========== */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-secondary);
+        }
+
+        .empty-state-icon {
+            font-size: 48px;
+            margin-bottom: 12px;
+            opacity: 0.4;
+        }
+
+        .empty-state-text {
+            font-size: 17px;
+            font-weight: 400;
+        }
+
+        /* ========== 吐司消息(轻提示) ========== */
+        .toast {
+            position: fixed;
+            top: calc(60px + var(--safe-top));
+            left: 50%;
+            transform: translateX(-50%) translateY(-120px);
+            background: rgba(28,28,30,0.9);
+            color: #FFFFFF;
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 500;
+            z-index: 300;
+            transition: transform 0.35s cubic-bezier(0.32, 0.72, 0, 1);
+            pointer-events: none;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
+        .toast.show {
+            transform: translateX(-50%) translateY(0);
+        }
+
+        /* ========== 新桌台/订单号设置弹窗 ========== */
+        .add-sheet-content {
+            padding: 0 0 16px;
+        }
+
+        /* ========== 弹窗打开时锁定背景滚动 ========== */
+        body:has(.sheet-overlay.show) #main-content,
+        body:has(.alert-overlay.show) #main-content {
+            overflow: hidden;
+        }
+
+        /* ========== 滚动条隐藏 ========== */
+        ::-webkit-scrollbar { display: none; }
+
+        /* ========== 笔记编辑Sheet内文本域 ========== */
+        .note-textarea {
+            width: 100%;
+            padding: 14px 16px;
+            font-size: 17px;
+            font-family: inherit;
+            border: none;
+            border-radius: var(--radius-sm);
+            background: var(--card);
+            color: var(--text);
+            -webkit-appearance: none;
+            outline: none;
+            resize: vertical;
+            min-height: 120px;
+            line-height: 1.5;
+        }
+
+        .note-input-title {
+            width: 100%;
+            padding: 14px 16px;
+            font-size: 20px;
+            font-weight: 600;
+            font-family: inherit;
+            border: none;
+            border-radius: var(--radius-sm);
+            background: var(--card);
+            color: var(--text);
+            -webkit-appearance: none;
+            outline: none;
+        }
+
+        /* ========== 设置按钮和操作项 ========== */
+        .settings-row {
+            display: flex;
+            gap: 8px;
+            margin-top: 16px;
+            padding-bottom: 16px;
+        }
+
+        .settings-btn {
+            flex: 1;
+            padding: 10px;
+            font-size: 13px;
+            font-weight: 500;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            font-family: inherit;
+            background: var(--card);
+            color: var(--text);
+            min-height: 40px;
+            -webkit-tap-highlight-color: transparent;
+            transition: all 0.15s ease;
+        }
+
+        .settings-btn:active {
+            background: #E0E0E5;
+            transform: scale(0.97);
+        }
+
+        .settings-btn.export-btn {
+            background: rgba(0,122,255,0.08);
+            color: var(--blue);
+        }
+
+        .settings-btn.restore-btn {
+            background: rgba(52,199,89,0.08);
+            color: var(--green);
+        }
+
+        /* 文件选择器(隐藏) */
+        #restore-file-input {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+<!-- ==================== 应用外壳 ==================== -->
+<div id="app">
+    <div class="safe-top"></div>
+
+    <!-- 主内容区 -->
+    <div id="main-content">
+        <!-- ===== 收银页面 ===== -->
+        <div id="page-cashier" class="page active">
+            <div class="page-header">
+                <h1 class="page-title">收银系统</h1>
+                <span class="page-date" id="header-date"></span>
+            </div>
+
+            <!-- iOS分段控制器 -->
+            <div class="segmented-control" id="segmented-control">
+                <button class="active" data-tab="dinein" onclick="switchTab('dinein')">堂食</button>
+                <button data-tab="takeaway" onclick="switchTab('takeaway')">打包</button>
+            </div>
+
+            <!-- 堂食视图 -->
+            <div id="view-dinein">
+                <div class="card-grid" id="dinein-grid"></div>
+                <div class="empty-state" id="dinein-empty" style="display:none">
+                    <div class="empty-state-icon">🍖</div>
+                    <div class="empty-state-text">还没有桌台</div>
+                    <div style="font-size:13px;color:var(--text-secondary);margin-top:4px;">点击右下角 + 添加</div>
+                </div>
+                <div class="settings-row">
+                    <button class="settings-btn export-btn" onclick="exportData()">导出备份</button>
+                    <button class="settings-btn restore-btn" onclick="document.getElementById('restore-file-input').click()">恢复备份</button>
+                </div>
+            </div>
+
+            <!-- 打包视图 -->
+            <div id="view-takeaway" style="display:none">
+                <div class="clear-btn-row">
+                    <button class="clear-btn" onclick="confirmClearCompleted()">清除已完成</button>
+                </div>
+                <div class="card-grid" id="takeaway-grid"></div>
+                <div class="empty-state" id="takeaway-empty" style="display:none">
+                    <div class="empty-state-icon">🛍️</div>
+                    <div class="empty-state-text">还没有打包订单</div>
+                    <div style="font-size:13px;color:var(--text-secondary);margin-top:4px;">点击右下角 + 添加</div>
+                </div>
+                <div class="settings-row">
+                    <button class="settings-btn export-btn" onclick="exportData()">导出备份</button>
+                    <button class="settings-btn restore-btn" onclick="document.getElementById('restore-file-input').click()">恢复备份</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== 记事本页面 ===== -->
+        <div id="page-notes" class="page">
+            <div class="page-header">
+                <h1 class="page-title">记事本</h1>
+            </div>
+            <div class="note-list" id="note-list"></div>
+            <div class="empty-state" id="notes-empty" style="display:none">
+                <div class="empty-state-icon">📝</div>
+                <div class="empty-state-text">还没有记事</div>
+                <div style="font-size:13px;color:var(--text-secondary);margin-top:4px;">点击右下角 + 添加</div>
+            </div>
+            <div class="settings-row">
+                <button class="settings-btn export-btn" onclick="exportData()">导出备份</button>
+                <button class="settings-btn restore-btn" onclick="document.getElementById('restore-file-input').click()">恢复备份</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== 底部标签栏 ===== -->
+    <div id="tab-bar">
+        <div class="tab-item active" data-page="cashier" onclick="switchPage('cashier')">
+            <svg viewBox="0 0 24 24" fill="currentColor">
+                <path d="M11.8 10.9c-2.27-.59-3-1.2-3-2.15 0-1.09 1.01-1.85 2.7-1.85 1.78 0 2.44.85 2.5 2.1h2.21c-.07-1.72-1.12-3.3-3.21-3.81V3h-3v2.16c-1.94.42-3.5 1.68-3.5 3.61 0 2.31 1.91 3.46 4.7 4.13 2.5.6 3 1.48 3 2.41 0 .69-.49 1.79-2.7 1.79-2.06 0-2.87-.92-2.98-2.1h-2.2c.12 2.19 1.76 3.42 3.68 3.83V21h3v-2.15c1.95-.37 3.5-1.5 3.5-3.55 0-2.84-2.43-3.81-4.7-4.4z"/>
+            </svg>
+            <span class="tab-label">收银</span>
+        </div>
+        <div class="tab-item" data-page="notes" onclick="switchPage('notes')">
+            <svg viewBox="0 0 24 24" fill="currentColor">
+                <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 3c1.93 0 3.5 1.57 3.5 3.5S13.93 13 12 13s-3.5-1.57-3.5-3.5S10.07 6 12 6zm7 13H5v-.23c0-.62.28-1.2.76-1.58C7.47 15.82 9.64 15 12 15s4.53.82 6.24 2.19c.48.38.76.97.76 1.58V19z"/>
+            </svg>
+            <span class="tab-label">记事</span>
+        </div>
+    </div>
+
+    <!-- ===== 悬浮添加按钮(收银页) ===== -->
+    <button class="fab" id="fab-add" onclick="handleFabClick()" title="添加">+</button>
+</div>
+
+<!-- ==================== 桌台/订单详情Sheet ==================== -->
+<div class="sheet-overlay" id="detail-sheet-overlay" onclick="closeDetailSheet()"></div>
+<div class="sheet" id="detail-sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title" id="detail-sheet-title">桌号</div>
+    <div class="sheet-content">
+        <div class="input-group">
+            <div class="input-label">消费金额</div>
+            <input type="number" class="input-field amount-input" id="detail-amount" placeholder="0" inputmode="decimal" step="0.01" min="0" onchange="onDetailChange()" oninput="onDetailChange()">
+        </div>
+        <div class="input-group">
+            <div class="input-label">备注</div>
+            <input type="text" class="input-field" id="detail-notes" placeholder="菜品、优惠、客人要求等" onchange="onDetailChange()" oninput="onDetailChange()">
+        </div>
+        <div class="toggle-row">
+            <span class="toggle-label">已结账</span>
+            <label class="ios-toggle">
+                <input type="checkbox" id="detail-checked" onchange="onDetailChange()">
+                <span class="toggle-bg"></span>
+            </label>
+        </div>
+        <div class="sheet-actions">
+            <button class="btn btn-primary" onclick="saveDetail()">保存</button>
+            <button class="btn btn-danger" onclick="confirmClearTable()">清桌</button>
+        </div>
+    </div>
+</div>
+
+<!-- ==================== 添加桌台/订单Sheet ==================== -->
+<div class="sheet-overlay" id="add-sheet-overlay" onclick="closeAddSheet()"></div>
+<div class="sheet" id="add-sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title" id="add-sheet-title">添加桌台</div>
+    <div class="add-sheet-content">
+        <div class="input-group">
+            <div class="input-label" id="add-number-label">桌号</div>
+            <input type="number" class="input-field amount-input" id="add-number-input" placeholder="输入编号" inputmode="numeric" min="1">
+        </div>
+        <div class="sheet-actions">
+            <button class="btn btn-primary" onclick="confirmAddItem()">添加</button>
+            <button class="btn btn-secondary" onclick="closeAddSheet()">取消</button>
+        </div>
+    </div>
+</div>
+
+<!-- ==================== 添加/编辑记事Sheet ==================== -->
+<div class="sheet-overlay" id="note-sheet-overlay" onclick="closeNoteSheet()"></div>
+<div class="sheet" id="note-sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title" id="note-sheet-title">新建记事</div>
+    <div class="add-sheet-content">
+        <div class="input-group">
+            <div class="input-label">标题</div>
+            <input type="text" class="input-field note-input-title" id="note-input-title" placeholder="记事标题" onchange="onNoteChange()" oninput="onNoteChange()">
+        </div>
+        <div class="input-group">
+            <div class="input-label">内容</div>
+            <textarea class="note-textarea" id="note-input-content" placeholder="记事内容" onchange="onNoteChange()" oninput="onNoteChange()"></textarea>
+        </div>
+        <div class="sheet-actions">
+            <button class="btn btn-primary" onclick="saveNote()">保存</button>
+            <button class="btn btn-danger" id="note-delete-btn" style="display:none" onclick="confirmDeleteNote()">删除</button>
+        </div>
+    </div>
+</div>
+
+<!-- ==================== 确认弹窗 ==================== -->
+<div class="alert-overlay" id="alert-overlay">
+    <div class="alert">
+        <div class="alert-title" id="alert-title"></div>
+        <div class="alert-message" id="alert-message"></div>
+        <div class="alert-actions">
+            <button class="alert-btn" id="alert-cancel" onclick="dismissAlert()">取消</button>
+            <button class="alert-btn destructive" id="alert-confirm" onclick="executeAlertAction()">确认</button>
+        </div>
+    </div>
+</div>
+
+<!-- ==================== 吐司 ==================== -->
+<div class="toast" id="toast"></div>
+
+<!-- 隐藏的文件选择器用于恢复备份 -->
+<input type="file" id="restore-file-input" accept=".json" onchange="restoreData(event)">
+
+<script>
+/* ================================================================
+ *  烧烤店收银记账管理系统 - iPhone PWA
+ *  纯前端单文件应用，三重数据存储，无后端依赖
+ * ================================================================ */
+
+// ==================== 全局配置 ====================
+const APP_VERSION = '1.0.0';
+const DB_NAME = 'BBQCashierDB';
+const DB_VERSION = 1;
+const STORE_NAME = 'appState';
+const LS_KEY = 'bbqCashierData';
+const BACKUP_KEY = 'bbqCashierBackups';
+
+// ==================== 应用状态(内存存储) ====================
+let appState = {
+    dineIn: [],      // 堂食桌台列表
+    takeaway: [],    // 打包订单列表
+    notes: [],       // 记事列表
+    lastBackupDate: '' // 上次每日备份日期
+};
+
+// 当前正在操作的项
+let currentDetailItem = null;   // 详情Sheet正在编辑的桌台/订单
+let currentDetailType = '';     // 'dinein' 或 'takeaway'
+let currentTab = 'dinein';      // 当前选中的分段控制器标签
+let currentPage = 'cashier';    // 当前页面
+let currentNoteId = null;       // 当前编辑的记事ID
+let noteDirty = false;          // 记事Sheet是否有未保存修改
+let detailDirty = false;        // 详情Sheet是否有未保存修改
+let alertCallback = null;       // 确认弹窗回调
+
+// ==================== 工具函数 ====================
+
+/** 生成唯一ID: 时间戳 + 随机数 */
+function generateId() {
+    return Date.now().toString(36) + Math.random().toString(36).substring(2, 8);
+}
+
+/** 格式化日期: YYYY年M月D日 */
+function formatDate(isoString) {
+    const d = new Date(isoString);
+    return d.getFullYear() + '年' + (d.getMonth() + 1) + '月' + d.getDate() + '日';
+}
+
+/** 获取今天的日期字符串 YYYY-MM-DD */
+function getTodayStr() {
+    return new Date().toISOString().slice(0, 10);
+}
+
+/** 格式化日期时间 */
+function formatDateTime(isoString) {
+    const d = new Date(isoString);
+    const pad = n => String(n).padStart(2, '0');
+    return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate())
+        + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+}
+
+// ==================== IndexedDB封装 ====================
+
+/** 打开IndexedDB数据库 */
+function openDB() {
+    return new Promise((resolve, reject) => {
+        const request = indexedDB.open(DB_NAME, DB_VERSION);
+        request.onupgradeneeded = (e) => {
+            const db = e.target.result;
+            if (!db.objectStoreNames.contains(STORE_NAME)) {
+                db.createObjectStore(STORE_NAME);
+            }
+        };
+        request.onsuccess = (e) => resolve(e.target.result);
+        request.onerror = (e) => reject(e.target.error);
+    });
+}
+
+/** 保存数据到IndexedDB */
+async function saveToIDB(data) {
+    try {
+        const db = await openDB();
+        const tx = db.transaction(STORE_NAME, 'readwrite');
+        tx.objectStore(STORE_NAME).put(data, 'state');
+        await new Promise((resolve, reject) => {
+            tx.oncomplete = resolve;
+            tx.onerror = reject;
+        });
+        db.close();
+    } catch (e) {
+        console.error('IndexedDB保存失败:', e);
+    }
+}
+
+/** 从IndexedDB读取数据 */
+async function loadFromIDB() {
+    try {
+        const db = await openDB();
+        const tx = db.transaction(STORE_NAME, 'readonly');
+        const result = await new Promise((resolve, reject) => {
+            const req = tx.objectStore(STORE_NAME).get('state');
+            req.onsuccess = () => resolve(req.result);
+            req.onerror = reject;
+        });
+        db.close();
+        return result || null;
+    } catch (e) {
+        console.error('IndexedDB读取失败:', e);
+        return null;
+    }
+}
+
+// ==================== 数据持久化(三重存储) ====================
+
+/** 三重保存: localStorage + IndexedDB + 内存 同时写入 */
+async function persistData() {
+    const serialized = JSON.stringify(appState);
+    // 1. 内存(始终是最新的)
+    // 2. localStorage
+    try {
+        localStorage.setItem(LS_KEY, serialized);
+    } catch (e) {
+        console.error('localStorage写入失败:', e);
+        showToast('存储空间不足，请清理旧数据');
+    }
+    // 3. IndexedDB
+    await saveToIDB(appState);
+}
+
+/** 加载数据: IndexedDB优先, 其次localStorage, 最后默认值 */
+async function loadData() {
+    // 1. 尝试IndexedDB
+    const idbData = await loadFromIDB();
+    if (idbData && idbData.dineIn !== undefined) {
+        console.log('从IndexedDB加载数据成功');
+        return idbData;
+    }
+
+    // 2. 尝试localStorage
+    try {
+        const lsData = localStorage.getItem(LS_KEY);
+        if (lsData) {
+            const parsed = JSON.parse(lsData);
+            if (parsed && parsed.dineIn !== undefined) {
+                console.log('从localStorage加载数据成功');
+                // 恢复回IndexedDB
+                await saveToIDB(parsed);
+                return parsed;
+            }
+        }
+    } catch (e) {
+        console.error('localStorage读取失败:', e);
+    }
+
+    // 3. 尝试每日备份还原
+    try {
+        const backupStr = localStorage.getItem(BACKUP_KEY);
+        if (backupStr) {
+            const backups = JSON.parse(backupStr);
+            const dates = Object.keys(backups).sort().reverse();
+            if (dates.length > 0) {
+                const latestBackup = backups[dates[0]];
+                if (latestBackup && latestBackup.dineIn !== undefined) {
+                    console.log('从最近备份恢复数据:', dates[0]);
+                    await saveToIDB(latestBackup);
+                    return latestBackup;
+                }
+            }
+        }
+    } catch (e) {
+        console.error('备份恢复失败:', e);
+    }
+
+    // 4. 返回默认空数据
+    console.log('使用默认空数据');
+    return { dineIn: [], takeaway: [], notes: [], lastBackupDate: '' };
+}
+
+/** 实时自动保存(防抖: 50ms内多次调用只执行一次) */
+let persistTimer = null;
+function autoSave() {
+    if (persistTimer) clearTimeout(persistTimer);
+    persistTimer = setTimeout(() => {
+        persistData();
+        // 打标记表示已保存
+        if (detailDirty) {
+            detailDirty = false;
+        }
+        if (noteDirty) {
+            noteDirty = false;
+        }
+    }, 50);
+}
+
+/** 每日自动备份 */
+function checkDailyBackup() {
+    const today = getTodayStr();
+    const lastDate = appState.lastBackupDate || '';
+
+    if (lastDate !== today) {
+        // 备份昨天及之前的数据
+        if (lastDate && (appState.dineIn.length > 0 || appState.takeaway.length > 0 || appState.notes.length > 0)) {
+            try {
+                const backupStr = localStorage.getItem(BACKUP_KEY);
+                let backups = backupStr ? JSON.parse(backupStr) : {};
+                // 只保留最近30天的备份
+                const dates = Object.keys(backups).sort();
+                while (dates.length >= 30) {
+                    delete backups[dates.shift()];
+                }
+                backups[lastDate] = {
+                    dineIn: JSON.parse(JSON.stringify(appState.dineIn)),
+                    takeaway: JSON.parse(JSON.stringify(appState.takeaway)),
+                    notes: JSON.parse(JSON.stringify(appState.notes))
+                };
+                localStorage.setItem(BACKUP_KEY, JSON.stringify(backups));
+                console.log('每日备份完成:', lastDate);
+            } catch (e) {
+                console.error('每日备份失败:', e);
+            }
+        }
+        appState.lastBackupDate = today;
+        persistData();
+    }
+}
+
+// ==================== 数据完整性检查 ====================
+
+function validateDataIntegrity(data) {
+    if (!data || typeof data !== 'object') return false;
+    if (!Array.isArray(data.dineIn)) return false;
+    if (!Array.isArray(data.takeaway)) return false;
+    if (!Array.isArray(data.notes)) return false;
+    // 验证每个数组元素
+    const allItems = [...data.dineIn, ...data.takeaway];
+    for (const item of allItems) {
+        if (!item.id || typeof item.amount !== 'number' || typeof item.isCheckedOut !== 'boolean') {
+            return false;
+        }
+    }
+    for (const note of data.notes) {
+        if (!note.id || !note.title !== undefined) {
+            return false;
+        }
+    }
+    return true;
+}
+
+// ==================== 导出/恢复数据 ====================
+
+/** 导出所有数据为JSON文件 */
+function exportData() {
+    const exportObj = {
+        version: APP_VERSION,
+        exportTime: new Date().toISOString(),
+        data: appState
+    };
+    const blob = new Blob([JSON.stringify(exportObj, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = '烧烤收银备份_' + getTodayStr() + '.json';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    showToast('数据已导出');
+}
+
+/** 从文件恢复数据 */
+function restoreData(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    // 重置input以便可以重新选择同一文件
+    event.target.value = '';
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        try {
+            const imported = JSON.parse(e.target.result);
+            const data = imported.data || imported;
+
+            if (!validateDataIntegrity(data)) {
+                showToast('备份文件格式无效');
+                return;
+            }
+
+            showAlert(
+                '恢复数据',
+                '恢复备份将覆盖当前所有数据，此操作不可撤销。确定要继续吗？',
+                '恢复',
+                true, // destructive
+                async () => {
+                    appState = data;
+                    if (!appState.lastBackupDate) appState.lastBackupDate = '';
+                    await persistData();
+                    refreshAllUI();
+                    showToast('数据已恢复');
+                }
+            );
+        } catch (err) {
+            console.error('恢复数据失败:', err);
+            showToast('备份文件读取失败');
+        }
+    };
+    reader.readAsText(file);
+}
+
+// ==================== UI辅助 ====================
+
+/** 显示吐司消息 */
+let toastTimer = null;
+function showToast(message) {
+    const toast = document.getElementById('toast');
+    toast.textContent = message;
+    toast.classList.add('show');
+    if (toastTimer) clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => {
+        toast.classList.remove('show');
+    }, 2000);
+}
+
+/** 显示确认弹窗 */
+function showAlert(title, message, confirmText, isDestructive, callback) {
+    document.getElementById('alert-title').textContent = title;
+    document.getElementById('alert-message').textContent = message;
+    const confirmBtn = document.getElementById('alert-confirm');
+    confirmBtn.textContent = confirmText;
+    confirmBtn.className = isDestructive ? 'alert-btn destructive' : 'alert-btn confirm';
+    document.getElementById('alert-overlay').classList.add('show');
+    alertCallback = callback;
+}
+
+function dismissAlert() {
+    document.getElementById('alert-overlay').classList.remove('show');
+    alertCallback = null;
+}
+
+function executeAlertAction() {
+    document.getElementById('alert-overlay').classList.remove('show');
+    if (alertCallback) {
+        const cb = alertCallback;
+        alertCallback = null;
+        cb();
+    }
+}
+
+// ==================== 底部标签栏切换 ====================
+
+function switchPage(page) {
+    currentPage = page;
+
+    // 切换页面显示
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.getElementById('page-' + page).classList.add('active');
+
+    // 切换标签栏状态
+    document.querySelectorAll('.tab-item').forEach(t => t.classList.remove('active'));
+    document.querySelector('[data-page="' + page + '"]').classList.add('active');
+
+    // 显示/隐藏悬浮按钮
+    const fab = document.getElementById('fab-add');
+    fab.style.display = 'block';
+
+    refreshCurrentView();
+}
+
+// ==================== 分段控制器切换 ====================
+
+function switchTab(tab) {
+    currentTab = tab;
+
+    // 更新分段控制器UI
+    const seg = document.getElementById('segmented-control');
+    seg.querySelectorAll('button').forEach(b => {
+        b.classList.toggle('active', b.dataset.tab === tab);
+    });
+
+    // 切换视图
+    document.getElementById('view-dinein').style.display = tab === 'dinein' ? 'block' : 'none';
+    document.getElementById('view-takeaway').style.display = tab === 'takeaway' ? 'block' : 'none';
+
+    refreshCurrentView();
+}
+
+// ==================== 渲染收银页面 ====================
+
+function renderCashierGrid() {
+    const items = currentTab === 'dinein' ? appState.dineIn : appState.takeaway;
+    const gridId = currentTab === 'dinein' ? 'dinein-grid' : 'takeaway-grid';
+    const emptyId = currentTab === 'dinein' ? 'dinein-empty' : 'takeaway-empty';
+    const grid = document.getElementById(gridId);
+    const empty = document.getElementById(emptyId);
+
+    if (items.length === 0) {
+        grid.innerHTML = '';
+        grid.style.display = 'none';
+        empty.style.display = 'block';
+        return;
+    }
+
+    empty.style.display = 'none';
+    grid.style.display = 'grid';
+
+    const isTakeaway = currentTab === 'takeaway';
+    const labelText = isTakeaway ? '订单' : '桌';
+
+    grid.innerHTML = items.map(item => {
+        let cardClass = 'table-card';
+        if (isTakeaway) {
+            cardClass += item.isCheckedOut ? ' checked-out-takeaway' : ' unchecked-takeaway';
+        } else {
+            if (item.isCheckedOut) cardClass += ' checked-out';
+        }
+
+        const number = isTakeaway ? item.orderNumber : item.tableNumber;
+        const statusText = item.isCheckedOut ? '已结账 ✓' : '未结账';
+
+        return `
+            <div class="${cardClass}" onclick="openDetailSheet('${item.id}')">
+                <div class="card-number">${labelText}${number}</div>
+                <div class="card-amount">${item.amount.toFixed(2)}</div>
+                <div class="card-status">${statusText}</div>
+            </div>
+        `;
+    }).join('');
+}
+
+/** 刷新当前视图 */
+function refreshCurrentView() {
+    if (currentPage === 'cashier') {
+        renderCashierGrid();
+    } else {
+        renderNoteList();
+    }
+}
+
+/** 刷新所有UI */
+function refreshAllUI() {
+    document.getElementById('header-date').textContent = formatDate(new Date().toISOString());
+    renderCashierGrid();
+    renderNoteList();
+}
+
+// ==================== 桌台/订单详情Sheet ====================
+
+function openDetailSheet(itemId) {
+    const items = currentTab === 'dinein' ? appState.dineIn : appState.takeaway;
+    const item = items.find(i => i.id === itemId);
+    if (!item) return;
+
+    currentDetailItem = item;
+    currentDetailType = currentTab;
+    detailDirty = false;
+
+    const isTakeaway = currentTab === 'takeaway';
+    const number = isTakeaway ? item.orderNumber : item.tableNumber;
+    const labelText = isTakeaway ? '订单' : '桌';
+
+    document.getElementById('detail-sheet-title').textContent = labelText + number;
+    document.getElementById('detail-amount').value = item.amount || '';
+    document.getElementById('detail-notes').value = item.notes || '';
+    document.getElementById('detail-checked').checked = item.isCheckedOut;
+
+    document.getElementById('detail-sheet-overlay').classList.add('show');
+    document.getElementById('detail-sheet').classList.add('show');
+
+    // 自动聚焦金额输入框
+    setTimeout(() => {
+        document.getElementById('detail-amount').focus();
+    }, 400);
+}
+
+function closeDetailSheet() {
+    // 如果有未保存修改，提示用户
+    if (detailDirty) {
+        showAlert(
+            '放弃修改？',
+            '你有未保存的修改，关闭后将丢失。',
+            '放弃',
+            true,
+            () => {
+                forceCloseDetailSheet();
+            }
+        );
+    } else {
+        forceCloseDetailSheet();
+    }
+}
+
+function forceCloseDetailSheet() {
+    document.getElementById('detail-sheet-overlay').classList.remove('show');
+    document.getElementById('detail-sheet').classList.remove('show');
+    currentDetailItem = null;
+    currentDetailType = '';
+    detailDirty = false;
+}
+
+/** 详情Sheet中任何输入变化时调用 */
+function onDetailChange() {
+    if (!detailDirty) detailDirty = true;
+    if (!currentDetailItem) return;
+
+    const amount = parseFloat(document.getElementById('detail-amount').value) || 0;
+    const notes = document.getElementById('detail-notes').value;
+    const isCheckedOut = document.getElementById('detail-checked').checked;
+
+    // 实时更新内存中的数据(不高频重绘网格，关闭Sheet时统一刷新)
+    currentDetailItem.amount = amount;
+    currentDetailItem.notes = notes;
+    currentDetailItem.isCheckedOut = isCheckedOut;
+
+    // 自动保存到三重存储
+    autoSave();
+}
+
+/** 保存详情(关闭Sheet) */
+function saveDetail() {
+    // 确保最新值
+    if (currentDetailItem) {
+        const amount = parseFloat(document.getElementById('detail-amount').value) || 0;
+        currentDetailItem.amount = amount;
+        currentDetailItem.notes = document.getElementById('detail-notes').value;
+        currentDetailItem.isCheckedOut = document.getElementById('detail-checked').checked;
+    }
+
+    detailDirty = false;
+    autoSave();
+    renderCashierGrid();
+    forceCloseDetailSheet();
+    showToast('已保存');
+}
+
+/** 确认清桌 */
+function confirmClearTable() {
+    const isTakeaway = currentDetailType === 'takeaway';
+    const labelText = isTakeaway ? '订单' : '桌台';
+
+    showAlert(
+        '清' + labelText,
+        '将清除金额、备注和结账状态，确定要清' + labelText + '吗？',
+        '清' + labelText,
+        true,
+        () => {
+            if (currentDetailItem) {
+                currentDetailItem.amount = 0;
+                currentDetailItem.notes = '';
+                currentDetailItem.isCheckedOut = false;
+                document.getElementById('detail-amount').value = '0';
+                document.getElementById('detail-notes').value = '';
+                document.getElementById('detail-checked').checked = false;
+            }
+            detailDirty = false;
+            autoSave();
+            renderCashierGrid();
+            forceCloseDetailSheet();
+            showToast('已清' + labelText);
+        }
+    );
+}
+
+// ==================== 添加桌台/订单 ====================
+
+function openAddSheet() {
+    const isTakeaway = currentTab === 'takeaway';
+    const labelText = isTakeaway ? '订单' : '桌台';
+
+    document.getElementById('add-sheet-title').textContent = '添加' + labelText;
+    document.getElementById('add-number-label').textContent = isTakeaway ? '订单号' : '桌号';
+    document.getElementById('add-number-input').value = '';
+    document.getElementById('add-sheet-overlay').classList.add('show');
+    document.getElementById('add-sheet').classList.add('show');
+
+    setTimeout(() => {
+        document.getElementById('add-number-input').focus();
+    }, 400);
+}
+
+function closeAddSheet() {
+    document.getElementById('add-sheet-overlay').classList.remove('show');
+    document.getElementById('add-sheet').classList.remove('show');
+}
+
+function confirmAddItem() {
+    const isTakeaway = currentTab === 'takeaway';
+    const labelText = isTakeaway ? '订单号' : '桌号';
+    const numberInput = document.getElementById('add-number-input');
+    const number = parseInt(numberInput.value);
+
+    if (!number || number < 1) {
+        showToast('请输入有效的' + labelText);
+        return;
+    }
+
+    // 检查是否已存在相同编号
+    const items = isTakeaway ? appState.takeaway : appState.dineIn;
+    const exists = items.find(i => {
+        const n = isTakeaway ? i.orderNumber : i.tableNumber;
+        return n === number;
+    });
+
+    if (exists) {
+        showToast(labelText + number + '已存在');
+        return;
+    }
+
+    const newItem = {
+        id: generateId(),
+        tableNumber: isTakeaway ? undefined : number,
+        orderNumber: isTakeaway ? number : undefined,
+        amount: 0,
+        notes: '',
+        isCheckedOut: false,
+        createdAt: new Date().toISOString()
+    };
+
+    if (isTakeaway) {
+        appState.takeaway.push(newItem);
+    } else {
+        appState.dineIn.push(newItem);
+    }
+
+    autoSave();
+    closeAddSheet();
+    renderCashierGrid();
+    showToast('已添加' + labelText + number);
+}
+
+// ==================== 清除已完成(打包视图) ====================
+
+function confirmClearCompleted() {
+    const completedCount = appState.takeaway.filter(i => i.isCheckedOut).length;
+    if (completedCount === 0) {
+        showToast('没有已完成订单');
+        return;
+    }
+
+    showAlert(
+        '清除已完成',
+        '将删除所有已结账的打包订单（共' + completedCount + '个），此操作不可撤销。',
+        '清除',
+        true,
+        () => {
+            appState.takeaway = appState.takeaway.filter(i => !i.isCheckedOut);
+            autoSave();
+            renderCashierGrid();
+            showToast('已清除' + completedCount + '个订单');
+        }
+    );
+}
+
+// ==================== 悬浮按钮点击 ====================
+
+function handleFabClick() {
+    if (currentPage === 'cashier') {
+        openAddSheet();
+    } else {
+        openNoteSheet();
+    }
+}
+
+// ==================== 记事本 ====================
+
+function renderNoteList() {
+    const list = document.getElementById('note-list');
+    const empty = document.getElementById('notes-empty');
+
+    const notes = [...appState.notes].sort((a, b) =>
+        new Date(b.updatedAt || b.createdAt) - new Date(a.updatedAt || a.createdAt)
+    );
+
+    if (notes.length === 0) {
+        list.innerHTML = '';
+        list.style.display = 'none';
+        empty.style.display = 'block';
+        return;
+    }
+
+    empty.style.display = 'none';
+    list.style.display = 'flex';
+
+    list.innerHTML = notes.map(note => {
+        const preview = (note.content || '').substring(0, 50) + ((note.content || '').length > 50 ? '...' : '');
+        const time = formatDateTime(note.updatedAt || note.createdAt);
+
+        return `
+            <div class="note-item" id="note-${note.id}"
+                 ontouchstart="onNoteTouchStart(event, '${note.id}')"
+                 ontouchmove="onNoteTouchMove(event, '${note.id}')"
+                 ontouchend="onNoteTouchEnd(event, '${note.id}')"
+                 onclick="openNoteSheet('${note.id}')">
+                <div class="note-title">${escapeHTML(note.title || '无标题')}</div>
+                <div class="note-preview">${escapeHTML(preview) || '无内容'}</div>
+                <div class="note-time">${time}</div>
+                <div class="note-delete-btn" onclick="event.stopPropagation(); deleteNoteDirect('${note.id}')">删除</div>
+            </div>
+        `;
+    }).join('');
+}
+
+function escapeHTML(str) {
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+}
+
+// ==================== 记事滑动手势 ====================
+// 简单的左滑删除实现
+let noteTouchStartX = 0;
+let noteTouchCurrentId = null;
+let noteTouchSwiped = false;
+
+function onNoteTouchStart(e, id) {
+    // 重置之前滑动的项
+    if (noteTouchCurrentId && noteTouchCurrentId !== id) {
+        const prev = document.getElementById('note-' + noteTouchCurrentId);
+        if (prev) prev.classList.remove('swiping');
+    }
+    noteTouchStartX = e.touches[0].clientX;
+    noteTouchCurrentId = id;
+    noteTouchSwiped = false;
+}
+
+function onNoteTouchMove(e, id) {
+    if (!noteTouchCurrentId || noteTouchCurrentId !== id) return;
+    const dx = e.touches[0].clientX - noteTouchStartX;
+    const el = document.getElementById('note-' + id);
+    if (!el) return;
+
+    if (dx < -50) {
+        el.classList.add('swiping');
+        noteTouchSwiped = true;
+    } else if (dx > 20) {
+        el.classList.remove('swiping');
+        noteTouchSwiped = false;
+    }
+}
+
+function onNoteTouchEnd(e, id) {
+    // 不做任何事，让click事件处理
+}
+
+function deleteNoteDirect(noteId) {
+    showAlert(
+        '删除记事',
+        '确定要删除这条记事吗？',
+        '删除',
+        true,
+        () => {
+            appState.notes = appState.notes.filter(n => n.id !== noteId);
+            noteTouchCurrentId = null;
+            autoSave();
+            renderNoteList();
+            showToast('已删除');
+        }
+    );
+}
+
+// ==================== 新建/编辑记事Sheet ====================
+
+function openNoteSheet(noteId) {
+    noteDirty = false;
+
+    if (noteId) {
+        // 编辑已有记事
+        const note = appState.notes.find(n => n.id === noteId);
+        if (!note) return;
+        currentNoteId = noteId;
+        document.getElementById('note-sheet-title').textContent = '编辑记事';
+        document.getElementById('note-input-title').value = note.title || '';
+        document.getElementById('note-input-content').value = note.content || '';
+        document.getElementById('note-delete-btn').style.display = 'block';
+    } else {
+        // 新建记事
+        currentNoteId = null;
+        document.getElementById('note-sheet-title').textContent = '新建记事';
+        document.getElementById('note-input-title').value = '';
+        document.getElementById('note-input-content').value = '';
+        document.getElementById('note-delete-btn').style.display = 'none';
+    }
+
+    document.getElementById('note-sheet-overlay').classList.add('show');
+    document.getElementById('note-sheet').classList.add('show');
+
+    setTimeout(() => {
+        document.getElementById('note-input-title').focus();
+    }, 400);
+}
+
+function closeNoteSheet() {
+    if (noteDirty) {
+        showAlert(
+            '放弃修改？',
+            '你有未保存的修改，关闭后将丢失。',
+            '放弃',
+            true,
+            () => {
+                forceCloseNoteSheet();
+            }
+        );
+    } else {
+        forceCloseNoteSheet();
+    }
+}
+
+function forceCloseNoteSheet() {
+    document.getElementById('note-sheet-overlay').classList.remove('show');
+    document.getElementById('note-sheet').classList.remove('show');
+    currentNoteId = null;
+    noteDirty = false;
+}
+
+function onNoteChange() {
+    noteDirty = true;
+}
+
+function saveNote() {
+    const title = document.getElementById('note-input-title').value.trim();
+    const content = document.getElementById('note-input-content').value.trim();
+
+    if (!title && !content) {
+        showToast('请输入标题或内容');
+        return;
+    }
+
+    if (currentNoteId) {
+        // 编辑
+        const note = appState.notes.find(n => n.id === currentNoteId);
+        if (note) {
+            note.title = title;
+            note.content = content;
+            note.updatedAt = new Date().toISOString();
+        }
+    } else {
+        // 新建
+        appState.notes.push({
+            id: generateId(),
+            title: title,
+            content: content,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+        });
+    }
+
+    noteDirty = false;
+    autoSave();
+    forceCloseNoteSheet();
+    renderNoteList();
+    showToast(currentNoteId ? '已更新' : '已创建');
+}
+
+function confirmDeleteNote() {
+    showAlert(
+        '删除记事',
+        '确定要删除这条记事吗？',
+        '删除',
+        true,
+        () => {
+            if (currentNoteId) {
+                appState.notes = appState.notes.filter(n => n.id !== currentNoteId);
+                noteDirty = false;
+                autoSave();
+                forceCloseNoteSheet();
+                renderNoteList();
+                showToast('已删除');
+            }
+        }
+    );
+}
+
+// ==================== 应用初始化 ====================
+
+async function initApp() {
+    console.log('烧烤收银系统 v' + APP_VERSION + ' 启动中...');
+
+    // 1. 加载数据
+    const data = await loadData();
+
+    // 2. 数据完整性检查
+    if (data && validateDataIntegrity(data)) {
+        appState = data;
+        console.log('数据加载成功:',
+            '堂食桌台', appState.dineIn.length, '个,',
+            '打包订单', appState.takeaway.length, '个,',
+            '记事', appState.notes.length, '条');
+    } else {
+        console.warn('数据完整性检查失败，使用默认数据');
+        appState = { dineIn: [], takeaway: [], notes: [], lastBackupDate: '' };
+    }
+
+    // 3. 每日备份检查
+    checkDailyBackup();
+
+    // 4. 首次保存(确保数据在各存储层都有)
+    await persistData();
+
+    // 5. 更新UI
+    document.getElementById('header-date').textContent = formatDate(new Date().toISOString());
+    renderCashierGrid();
+    renderNoteList();
+
+    // 6. 内联PWA清单(支持添加到主屏幕)
+    // iOS的PWA由meta标签(apple-mobile-web-app-capable等)控制，不需要manifest
+    // 此处为Android/Chrome提供manifest支持
+    const manifest = {
+        name: '烧烤收银',
+        short_name: '烧烤收银',
+        display: 'standalone',
+        orientation: 'portrait',
+        theme_color: '#FFFFFF',
+        background_color: '#FFFFFF',
+        icons: [{
+            src: 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="180" height="180"><rect width="180" height="180" rx="36" fill="#007AFF"/><text x="90" y="110" font-size="90" text-anchor="middle" fill="white" font-family="sans-serif">🍖</text></svg>'),
+            sizes: '180x180',
+            type: 'image/svg+xml'
+        }]
+    };
+    const manifestBlob = new Blob([JSON.stringify(manifest)], { type: 'application/json' });
+    const manifestUrl = URL.createObjectURL(manifestBlob);
+    const linkEl = document.createElement('link');
+    linkEl.rel = 'manifest';
+    linkEl.href = manifestUrl;
+    document.head.appendChild(linkEl);
+
+    console.log('应用初始化完成 ✓');
+
+    // 7. 页面关闭前最后保存(以及页面隐藏时)
+    window.addEventListener('beforeunload', () => {
+        persistData();
+    });
+    window.addEventListener('pagehide', () => {
+        persistData();
+    });
+    // 页面不可见时也保存
+    document.addEventListener('visibilitychange', () => {
+        if (document.hidden) {
+            persistData();
+        }
+    });
+}
+
+// ==================== 启动 ====================
+document.addEventListener('DOMContentLoaded', initApp);
+</script>
+
+</body>
+</html>
