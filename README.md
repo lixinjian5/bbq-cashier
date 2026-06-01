@@ -31,4 +31,4 @@
 
 ## 使用方式
 
-直接在浏览器中打开 `index.html` 即可使用。建议部署到静态托管服务（如 GitHub Pages）后在手机上通过 Safari/Chrome 访问，体验最佳。
+推荐直接用手机浏览器打开 **[lixinjian5.github.io/bbq-cashier](https://lixinjian5.github.io/bbq-cashier/)** 即可使用。
