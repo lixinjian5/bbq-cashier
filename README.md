@@ -1,5 +1,5 @@
 # BBQ Cashier (烧烤收银管理系统)
-
+家里卖烧烤的，根据现有工具做了一个极简的烧烤收银记账。
 移动端烧烤店收银管理工具，纯前端单文件应用，无后端依赖。
 
 在线使用：**[lixinjian5.github.io/bbq-cashier](https://lixinjian5.github.io/bbq-cashier/)**
